@@ -1,0 +1,41 @@
+name: Web UI Automation Tests (Playwright)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  ui-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 2. 安装 Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 3. 安装依赖与 Chromium 浏览器
+        run: |
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+
+      - name: 4. 无头模式运行 Playwright UI 自动化测试
+        run: pytest --alluredir=reports/allure-results
+
+      - name: 5. 上传测试报告与失败截图（无论成败均保留）
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-reports-${{ github.run_number }}
+          path: |
+            reports/ui_report.html
+            reports/screenshots
+            reports/allure-results
+          retention-days: 14
